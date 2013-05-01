@@ -95,9 +95,9 @@ public class Main {
         MapContext map = new DefaultMapContext();
         map.setTitle("Pasively Geolocated Data");
         map.addLayer(rasterLayer);
-        //map.addLayer(shpSource, null);
-        //map.addLayer(csvSource, null);
-        //map.addLayer(DataUtilities.source(offsetCollection), null);
+        map.addLayer(shpSource, null);
+        map.addLayer(csvSource, null);
+        map.addLayer(DataUtilities.source(offsetCollection), null);
 
         // Now display the map
         JMapFrame.showMap(map);
