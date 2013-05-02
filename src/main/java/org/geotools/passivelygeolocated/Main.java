@@ -2,6 +2,7 @@ package org.geotools.passivelygeolocated;
 
 import java.io.File;
 import com.vividsolutions.jts.geom.Point;
+import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -10,6 +11,7 @@ import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.feature.FeatureCollections;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.map.DefaultMapContext;
+import org.geotools.map.GridCoverageLayer;
 import org.geotools.map.Layer;
 import org.geotools.map.MapContext;
 import org.geotools.swing.JMapFrame;
@@ -49,7 +51,8 @@ public class Main {
         if (tif == null) {
             return;
         }
-        Layer rasterLayer = FileReaders.openGeoTiffFile(tif);
+        GridCoverageLayer rasterLayer = FileReaders.openGeoTiffFile(tif);
+        GridCoverage2D weightingSurface = rasterLayer.getCoverage();
 
         //offset the csv data for testing
         SimpleFeatureCollection csvCollection = csvSource.getFeatures();
@@ -59,7 +62,6 @@ public class Main {
         SimpleFeatureCollection offsetCollection = FeatureCollections.newCollection();
         final SimpleFeatureType TYPE = DataUtilities.createType("Location", "location:Point:srid=27700,");  //srid=4326,");
         SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(TYPE);
-
 
         try {
             while (iterator.hasNext()) {
@@ -73,7 +75,7 @@ public class Main {
 
                     //offset and draw to map as well
                     WeightedFuzzy wf = new WeightedFuzzy();
-                    Point o = wf.relocate(p, 1, 10000, false);
+                    Point o = wf.relocate(p, 10, 10000, weightingSurface);
 
                     //add to a feature
                     featureBuilder.add(o);
@@ -88,8 +90,6 @@ public class Main {
             //close the iterator
             csvCollection.close(iterator);
         }
-   
-        System.out.println("**here**");
 
         // Create a map context and add our shapefile to it
         MapContext map = new DefaultMapContext();

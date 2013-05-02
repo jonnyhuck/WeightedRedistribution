@@ -20,7 +20,6 @@ import org.geotools.feature.FeatureCollections;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.map.GridCoverageLayer;
-import org.geotools.map.Layer;
 import org.geotools.styling.ChannelSelection;
 import org.geotools.styling.ContrastEnhancement;
 import org.geotools.styling.RasterSymbolizer;
@@ -121,7 +120,7 @@ public class FileReaders {
      * @param file
      * @return Layer
      */
-    public static Layer openGeoTiffFile(File file)
+    public static GridCoverageLayer openGeoTiffFile(File file)
             throws IllegalArgumentException, IOException, NoSuchAuthorityCodeException, FactoryException {
 
         //get a reader for the input file (will read to default projection)     

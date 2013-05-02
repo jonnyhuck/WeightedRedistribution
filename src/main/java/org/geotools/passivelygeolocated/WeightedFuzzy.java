@@ -3,8 +3,15 @@ package org.geotools.passivelygeolocated;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
-import org.geotools.data.ows.Layer;
+import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.geometry.DirectPosition2D;
 import org.geotools.geometry.jts.JTSFactoryFinder;
+import org.geotools.map.GridCoverageLayer;
+import org.geotools.referencing.CRS;
+import org.opengis.geometry.DirectPosition;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.NoSuchAuthorityCodeException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 /**
  *
@@ -16,44 +23,56 @@ public class WeightedFuzzy {
     private final int earthRadius = 6378137;
 
     /**
-     * 
+     * Relocates a point using the weighting surface.
+     * More iterations = more weighting. Fewer iterations = more random
      * @param point
      * @param iterations
      * @param maxDistance
      * @return 
      */
-    public Point relocate(Point point, int iterations, double maxDistance, boolean spherical) {
+    public Point relocate(Point point, int iterations, double maxDistance, GridCoverage2D weightingSurface)
+            throws NoSuchAuthorityCodeException, FactoryException {
+
+        //holds max value
+        double maxVal = 0;
+        Point out = point;
 
         //create the required number of offset points
         for (int i = 0; i < iterations; i++) {
 
-            //which offset method to use?
-            if (spherical) {
+            //offset the point and push into an array list
+            Point relocated = cartesianOffset(point, Math.rint(Math.random() * maxDistance),
+                    Math.rint(Math.random() * 359));
 
-                //offset the point and push into an array list
-                Point relocated = sphericalOffset(point, Math.rint(Math.random() * maxDistance),
-                        Math.rint(Math.random() * 359));
-
-                //test the weighting surface value
-
-            } else {    //cartesian
-
-                //offset the point and push into an array list
-                Point relocated = cartesianOffset(point, Math.rint(Math.random() * maxDistance),
-                        Math.rint(Math.random() * 359));
-
-                //test the weighting surface value
+            //test the weighting surface value
+            double val = getValueFromRaster(relocated, weightingSurface);
+            if (val > maxVal) {
+                maxVal = val;
+                out = relocated;
             }
         }
 
         //return the new point
-        return point;
+        return out;
     }
-    
-    public double getValueFromRaster(Point point, Layer rasterLayer) {
-        
-        
-        return 0;
+
+    /**
+     * Returns a value from a raster at a given coordinate
+     * @param point
+     * @param weightingSurface
+     * @return
+     * @throws NoSuchAuthorityCodeException
+     * @throws FactoryException 
+     */
+    public double getValueFromRaster(Point point, GridCoverage2D weightingSurface)
+            throws NoSuchAuthorityCodeException, FactoryException {
+
+        //get the coverage data
+        CoordinateReferenceSystem crs = CRS.decode("EPSG:27700");
+        DirectPosition position = new DirectPosition2D(crs, point.getX(), point.getY());
+        double[] bands = new double[1];
+        weightingSurface.evaluate(position, bands);
+        return bands[0];
     }
 
     /**
@@ -79,8 +98,8 @@ public class WeightedFuzzy {
 
         //(includes normalisation for -180 - 180)
         double lng = (rad2deg(lngR + Math.atan2(Math.sin(azimuthR) * Math.sin(distR)
-                * Math.cos(latR), Math.cos(distR) - Math.sin(latR) * 
-                Math.sin(deg2rad(lat)))) + 540 % 360) - 180;
+                * Math.cos(latR), Math.cos(distR) - Math.sin(latR)
+                * Math.sin(deg2rad(lat)))) + 540 % 360) - 180;
 
         //build a point object from the results
         GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory(null);
