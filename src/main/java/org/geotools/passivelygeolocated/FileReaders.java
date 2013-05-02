@@ -130,12 +130,12 @@ public class FileReaders {
 
         //create greyscale style
         StyleFactory sf = CommonFactoryFinder.getStyleFactory(null);
-        //FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(null);
-        //ContrastEnhancement ce = sf.contrastEnhancement(ff.literal(1.0), ContrastMethod.NORMALIZE);
-        //SelectedChannelType sct = sf.createSelectedChannelType(String.valueOf(1), ce);
+        FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(null);
+        ContrastEnhancement ce = sf.contrastEnhancement(ff.literal(1.0), ContrastMethod.NORMALIZE);
+        SelectedChannelType sct = sf.createSelectedChannelType(String.valueOf(1), ce);
         RasterSymbolizer sym = sf.getDefaultRasterSymbolizer();
-        //ChannelSelection sel = sf.channelSelection(sct);
-        //sym.setChannelSelection(sel);
+        ChannelSelection sel = sf.channelSelection(sct);
+        sym.setChannelSelection(sel);
         Style rasterStyle = SLD.wrapSymbolizers(sym);
 
         //return greyscaled raster

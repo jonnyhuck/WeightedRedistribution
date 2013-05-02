@@ -3,7 +3,6 @@ package org.geotools.passivelygeolocated;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
-import java.util.ArrayList;
 import org.geotools.data.ows.Layer;
 import org.geotools.geometry.jts.JTSFactoryFinder;
 
