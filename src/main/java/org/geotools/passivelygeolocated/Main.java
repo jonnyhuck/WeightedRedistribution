@@ -12,7 +12,6 @@ import org.geotools.feature.FeatureCollections;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.map.DefaultMapContext;
 import org.geotools.map.GridCoverageLayer;
-import org.geotools.map.Layer;
 import org.geotools.map.MapContext;
 import org.geotools.swing.JMapFrame;
 import org.opengis.feature.simple.SimpleFeature;
