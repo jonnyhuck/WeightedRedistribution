@@ -8,6 +8,9 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
+import java.awt.image.DataBuffer;
+import java.awt.image.WritableRaster;
+import javax.media.jai.RasterFactory;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.FileDataStore;
@@ -38,6 +41,7 @@ import org.opengis.style.ContrastMethod;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
+import org.geotools.geometry.Envelope2D;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -213,4 +217,29 @@ public class FileHandler {
             gw.dispose();
         }
     }
+    
+    /**
+     * Returns a blank writable raster based upon the gc given
+     * @param template
+     * @return 
+     */
+    public WritableRaster getWritableRaster(GridCoverage2D template, double initialValue){
+        
+        //get raster dimensions
+        final Envelope2D envelope = template.getEnvelope2D();
+        final int width  = (int) envelope.getWidth();
+        final int height = (int) envelope.getHeight();
+        
+        //build writable raster
+        WritableRaster raster = RasterFactory.createBandedRaster(DataBuffer.TYPE_DOUBLE, width, height, 1, null);
+        
+        //populate with initial value
+        for (int y=0; y<height; y++) {
+            for (int x=0; x<width; x++) {
+                raster.setSample(x, y, 0, initialValue);
+            }
+        }
+        
+        return raster;
+    } 
 }

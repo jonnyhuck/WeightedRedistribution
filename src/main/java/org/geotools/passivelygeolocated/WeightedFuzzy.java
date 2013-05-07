@@ -6,7 +6,6 @@ import com.vividsolutions.jts.geom.Point;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.geometry.jts.JTSFactoryFinder;
-import org.geotools.map.GridCoverageLayer;
 import org.geotools.referencing.CRS;
 import org.opengis.geometry.DirectPosition;
 import org.opengis.referencing.FactoryException;
