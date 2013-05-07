@@ -223,7 +223,7 @@ public class FileHandler {
      * @param template
      * @return 
      */
-    public WritableRaster getWritableRaster(GridCoverage2D template, double initialValue){
+    public static WritableRaster getWritableRaster(GridCoverage2D template, double initialValue){
         
         //get raster dimensions
         final Envelope2D envelope = template.getEnvelope2D();

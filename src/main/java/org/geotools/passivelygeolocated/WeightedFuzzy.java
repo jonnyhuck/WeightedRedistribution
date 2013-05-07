@@ -3,6 +3,7 @@ package org.geotools.passivelygeolocated;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
+import java.awt.image.WritableRaster;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -48,11 +49,14 @@ public class WeightedFuzzy {
         final SimpleFeatureType TYPE = DataUtilities.createType("Location", "location:Point:srid=27700,");  //srid=4326,");
         SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(TYPE);
 
-        //get iterator to move through the input features
-        SimpleFeatureIterator iterator = csvCollection.features();
+        //get an output surface
+        WritableRaster outputSurface = FileHandler.getWritableRaster(weightingSurface, 0);
 
         //build the matrix to represent each 'splat'
         double[][] splat = this.getFuzzyMatrix(10000, 1000);
+
+        //get iterator to move through the input features
+        SimpleFeatureIterator iterator = csvCollection.features();
 
         try {
             //populate the new feature collection with offset points
@@ -65,13 +69,21 @@ public class WeightedFuzzy {
                 //test that a default geom was set
                 if (p != null) {
 
-                    //offset and add to a feature
+                    //offset
                     Point o = this.relocate(p, relocationIterations, maxRelocationDistance, weightingSurface);
+                    
+                    //add to feature
                     featureBuilder.add(o);
                     SimpleFeature offsetFeature = featureBuilder.buildFeature(null);
+                    
+                    //add splat to raster
+                    //*****HERE*****//
+                    //outputSurface.setPixels(o.getX(), o.getY(), 10000, 10000, splat)
 
                     //add the feature to a collection
                     offsetCollection.add(offsetFeature);
+
+                    //add splat to the surface at the desired location
 
                 }
             }
@@ -128,7 +140,7 @@ public class WeightedFuzzy {
         //get the required array size and build it
         final int span = (radPx * 2) + 1;
         double[][] matrix = new double[span][span];
-        
+
         //popuate the array with values
         for (int i = 0; i < span; i++) {
             for (int j = 0; j < span; j++) {
@@ -150,12 +162,12 @@ public class WeightedFuzzy {
 
         //use pythgoras to work out the pixel distance and test agains radius
         double pxDistance = Math.sqrt(Math.pow(radPx - x, 2) + Math.pow(radPx - y, 2));
-        
+
         //return 0 if outside radius
         if (pxDistance > radPx) {
             return 0;
         }
-        
+
         //scale 0 - 1 and invert value
         return 1 - (pxDistance) / radPx;
     }
