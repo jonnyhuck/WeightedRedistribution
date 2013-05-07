@@ -39,17 +39,20 @@ public class WeightedFuzzy {
      * @throws FactoryException
      * @throws SchemaException 
      */
-    public SimpleFeatureCollection getFuzzyRelocatedSurface(SimpleFeatureCollection csvCollection, GridCoverage2D weightingSurface, 
-            int relocationIterations, int maxRelocationDistance) 
+    public SimpleFeatureCollection getFuzzyRelocatedSurface(SimpleFeatureCollection csvCollection, GridCoverage2D weightingSurface,
+            int relocationIterations, int maxRelocationDistance)
             throws NoSuchAuthorityCodeException, FactoryException, SchemaException {
-        
+
         //build a new feature collection for offset points
         SimpleFeatureCollection offsetCollection = FeatureCollections.newCollection();
         final SimpleFeatureType TYPE = DataUtilities.createType("Location", "location:Point:srid=27700,");  //srid=4326,");
         SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(TYPE);
-        
+
         //get iterator to move through the input features
         SimpleFeatureIterator iterator = csvCollection.features();
+
+        //build the matrix to represent each 'splat'
+        double[][] splat = this.getFuzzyMatrix(10000, 1000);
 
         try {
             //populate the new feature collection with offset points
@@ -78,7 +81,7 @@ public class WeightedFuzzy {
         }
         return offsetCollection;
     }
-    
+
     /**
      * Relocates a point using the weighting surface.
      * More iterations = more weighting. Fewer iterations = more random
@@ -117,7 +120,37 @@ public class WeightedFuzzy {
      * Creates a matrix of values to be applied to the output surface
      * @param radius 
      */
-    private void getFuzzyMatrix(double radius) {
+    private double[][] getFuzzyMatrix(int radius, double pixelSize) {
+
+        //get the size of the radius in pixels
+        final int radPx = (int) (radius / pixelSize);
+
+        //get the required array size and build it
+        final int span = (radPx * 2) + 1;
+        double[][] matrix = new double[span][span];
+
+        //popuate the array with values
+        for (int i = 0; i < span; i++) {
+            for (int j = 0; j < span; j++) {
+                //populate value ased upon distance to centre (java array is ordered y,x not x,y)
+                matrix[i][j] = isWithinRadius(j, i, radPx) ? 1 : 0;
+            }
+        }
+        return matrix;
+    }
+
+    /**
+     * Assesses whether or not a pixel is within span of the centre
+     * @param x
+     * @param y
+     * @param radPx
+     * @return 
+     */
+    private boolean isWithinRadius(int x, int y, int radPx) {
+
+        //use pythgoras to work out the pixel distance and test agains radius
+        double pxDistance = Math.sqrt(Math.pow(radPx - x, 2) + Math.pow(radPx - y, 2));
+        return (pxDistance <= radPx) ? true : false;
     }
 
     /**
