@@ -36,21 +36,21 @@ public class Main {
         if (csv == null) {
             return;
         }
-        SimpleFeatureSource csvSource = FileReaders.transformFeature(FileReaders.importCSV(csv));
+        SimpleFeatureSource csvSource = FileHandler.transformFeature(FileHandler.importCSV(csv));
 
         // display a data store file chooser dialog for shapefiles
         File shp = JFileDataStoreChooser.showOpenFile("shp", null);
         if (shp == null) {
             return;
         }
-        SimpleFeatureSource shpSource = FileReaders.openShapefile(shp);
+        SimpleFeatureSource shpSource = FileHandler.openShapefile(shp);
 
         // display a data store file chooser dialog for ESRI tifii grid
         File tif = JFileDataStoreChooser.showOpenFile("tif", null);
         if (tif == null) {
             return;
         }
-        GridCoverageLayer rasterLayer = FileReaders.openGeoTiffFile(tif);
+        GridCoverageLayer rasterLayer = FileHandler.openGeoTiffFile(tif);
         GridCoverage2D weightingSurface = rasterLayer.getCoverage();
 
         //offset the csv data for testing

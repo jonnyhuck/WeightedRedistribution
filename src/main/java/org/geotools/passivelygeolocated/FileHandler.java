@@ -37,6 +37,7 @@ import org.opengis.referencing.operation.TransformException;
 import org.opengis.style.ContrastMethod;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.gce.geotiff.GeoTiffReader;
+import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -46,7 +47,7 @@ import org.opengis.referencing.operation.MathTransform;
  *
  * @author jonnyhuck
  */
-public class FileReaders {
+public class FileHandler {
 
     /**
      * Open a shapefile and return the feature source
@@ -188,5 +189,28 @@ public class FileReaders {
             iterator.close();
         }
         return DataUtilities.source(collection);
+    }
+
+    /**
+     * Writes a GridCoverage2D to a GeoTiff file
+     * @param gc
+     * @param path
+     * @throws IOException 
+     */
+    public static void writeGeoTiffFile(GridCoverage2D gc, String path) throws IOException {
+
+
+        //create a geotiff writer
+        GeoTiffWriter gw = new GeoTiffWriter(path);
+
+        try {
+            
+            //write the file
+            gw.write(gc, null);
+
+        } finally {
+            //destroy the writer
+            gw.dispose();
+        }
     }
 }
