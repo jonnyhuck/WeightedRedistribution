@@ -4,9 +4,17 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.data.DataUtilities;
+import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.data.simple.SimpleFeatureIterator;
+import org.geotools.feature.FeatureCollections;
+import org.geotools.feature.SchemaException;
+import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.referencing.CRS;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.geometry.DirectPosition;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
@@ -22,6 +30,56 @@ public class WeightedFuzzy {
     private final int earthRadius = 6378137;
 
     /**
+     * 
+     * @param csvCollection
+     * @param weightingSurface
+     * @param relocationIterations
+     * @param maxRelocationDistance
+     * @throws NoSuchAuthorityCodeException
+     * @throws FactoryException
+     * @throws SchemaException 
+     */
+    public SimpleFeatureCollection getFuzzyRelocatedSurface(SimpleFeatureCollection csvCollection, GridCoverage2D weightingSurface, 
+            int relocationIterations, int maxRelocationDistance) 
+            throws NoSuchAuthorityCodeException, FactoryException, SchemaException {
+        
+        //build a new feature collection for offset points
+        SimpleFeatureCollection offsetCollection = FeatureCollections.newCollection();
+        final SimpleFeatureType TYPE = DataUtilities.createType("Location", "location:Point:srid=27700,");  //srid=4326,");
+        SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(TYPE);
+        
+        //get iterator to move through the input features
+        SimpleFeatureIterator iterator = csvCollection.features();
+
+        try {
+            //populate the new feature collection with offset points
+            while (iterator.hasNext()) {
+
+                //retrieve the feature then geom (as a JTS point)
+                SimpleFeature feature = iterator.next();
+                Point p = (Point) feature.getDefaultGeometry();
+
+                //test that a default geom was set
+                if (p != null) {
+
+                    //offset and add to a feature
+                    Point o = this.relocate(p, relocationIterations, maxRelocationDistance, weightingSurface);
+                    featureBuilder.add(o);
+                    SimpleFeature offsetFeature = featureBuilder.buildFeature(null);
+
+                    //add the feature to a collection
+                    offsetCollection.add(offsetFeature);
+
+                }
+            }
+        } finally {
+            //close the iterator
+            csvCollection.close(iterator);
+        }
+        return offsetCollection;
+    }
+    
+    /**
      * Relocates a point using the weighting surface.
      * More iterations = more weighting. Fewer iterations = more random
      * @param point
@@ -29,7 +87,7 @@ public class WeightedFuzzy {
      * @param maxDistance
      * @return 
      */
-    public Point relocate(Point point, int iterations, double maxDistance, GridCoverage2D weightingSurface)
+    private Point relocate(Point point, int iterations, double maxDistance, GridCoverage2D weightingSurface)
             throws NoSuchAuthorityCodeException, FactoryException {
 
         //holds max value
@@ -40,11 +98,11 @@ public class WeightedFuzzy {
         for (int i = 0; i < iterations; i++) {
 
             //offset the point and push into an array list
-            Point relocated = cartesianOffset(point, Math.rint(Math.random() * maxDistance),
+            Point relocated = this.cartesianOffset(point, Math.rint(Math.random() * maxDistance),
                     Math.rint(Math.random() * 359));
 
             //test the weighting surface value
-            double val = getValueFromRaster(relocated, weightingSurface);
+            double val = this.getValueFromRaster(relocated, weightingSurface);
             if (val > maxVal) {
                 maxVal = val;
                 out = relocated;
@@ -56,6 +114,13 @@ public class WeightedFuzzy {
     }
 
     /**
+     * Creates a matrix of values to be applied to the output surface
+     * @param radius 
+     */
+    private void getFuzzyMatrix(double radius) {
+    }
+
+    /**
      * Returns a value from a raster at a given coordinate
      * @param point
      * @param weightingSurface
@@ -63,7 +128,7 @@ public class WeightedFuzzy {
      * @throws NoSuchAuthorityCodeException
      * @throws FactoryException 
      */
-    public double getValueFromRaster(Point point, GridCoverage2D weightingSurface)
+    private double getValueFromRaster(Point point, GridCoverage2D weightingSurface)
             throws NoSuchAuthorityCodeException, FactoryException {
 
         //get the coverage data

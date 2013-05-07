@@ -1,21 +1,15 @@
 package org.geotools.passivelygeolocated;
 
 import java.io.File;
-import com.vividsolutions.jts.geom.Point;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.simple.SimpleFeatureCollection;
-import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.swing.data.JFileDataStoreChooser;
 import org.geotools.data.simple.SimpleFeatureSource;
-import org.geotools.feature.FeatureCollections;
-import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.map.DefaultMapContext;
 import org.geotools.map.GridCoverageLayer;
 import org.geotools.map.MapContext;
 import org.geotools.swing.JMapFrame;
-import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.feature.simple.SimpleFeatureType;
 
 
 /**
@@ -55,41 +49,10 @@ public class Main {
 
         //offset the csv data for testing
         SimpleFeatureCollection csvCollection = csvSource.getFeatures();
-        SimpleFeatureIterator iterator = csvCollection.features();
-
-        //create a feature 
-        SimpleFeatureCollection offsetCollection = FeatureCollections.newCollection();
-        final SimpleFeatureType TYPE = DataUtilities.createType("Location", "location:Point:srid=27700,");  //srid=4326,");
-        SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(TYPE);
-
-        try {
-            while (iterator.hasNext()) {
-
-                //retrieve the feature then geom (as a JTS point)
-                SimpleFeature feature = iterator.next();
-                Point p = (Point) feature.getDefaultGeometry();
-
-                //test that a default geom was set
-                if (p != null) {
-
-                    //offset and draw to map as well
-                    WeightedFuzzy wf = new WeightedFuzzy();
-                    Point o = wf.relocate(p, 10, 10000, weightingSurface);
-
-                    //add to a feature
-                    featureBuilder.add(o);
-                    SimpleFeature offsetFeature = featureBuilder.buildFeature(null);
-
-                    //add the feature to a collection
-                    offsetCollection.add(offsetFeature);
-
-                }
-            }
-        } finally {
-            //close the iterator
-            csvCollection.close(iterator);
-        }
-
+        
+        WeightedFuzzy wf = new WeightedFuzzy();
+        SimpleFeatureCollection offsetCollection = wf.getFuzzyRelocatedSurface(csvCollection, weightingSurface, 10, 10000);
+        
         // Create a map context and add our shapefile to it
         MapContext map = new DefaultMapContext();
         map.setTitle("Pasively Geolocated Data");
