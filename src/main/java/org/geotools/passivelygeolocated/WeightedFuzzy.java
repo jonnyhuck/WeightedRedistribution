@@ -128,12 +128,12 @@ public class WeightedFuzzy {
         //get the required array size and build it
         final int span = (radPx * 2) + 1;
         double[][] matrix = new double[span][span];
-
+        
         //popuate the array with values
         for (int i = 0; i < span; i++) {
             for (int j = 0; j < span; j++) {
                 //populate value ased upon distance to centre (java array is ordered y,x not x,y)
-                matrix[i][j] = isWithinRadius(j, i, radPx) ? 1 : 0;
+                matrix[i][j] = getMatrixValue(j, i, radPx);
             }
         }
         return matrix;
@@ -146,11 +146,18 @@ public class WeightedFuzzy {
      * @param radPx
      * @return 
      */
-    private boolean isWithinRadius(int x, int y, int radPx) {
+    private double getMatrixValue(int x, int y, int radPx) {
 
         //use pythgoras to work out the pixel distance and test agains radius
         double pxDistance = Math.sqrt(Math.pow(radPx - x, 2) + Math.pow(radPx - y, 2));
-        return (pxDistance <= radPx) ? true : false;
+        
+        //return 0 if outside radius
+        if (pxDistance > radPx) {
+            return 0;
+        }
+        
+        //scale 0 - 1 and invert value
+        return 1 - (pxDistance) / radPx;
     }
 
     /**
