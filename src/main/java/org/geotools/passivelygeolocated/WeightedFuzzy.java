@@ -4,8 +4,10 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import java.awt.image.WritableRaster;
+import java.io.IOException;
 import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.InvalidGridGeometryException;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -43,9 +45,9 @@ public class WeightedFuzzy {
      * @throws FactoryException
      * @throws SchemaException 
      */
-    public SimpleFeatureCollection getFuzzyRelocatedSurface(SimpleFeatureCollection csvCollection, 
-            GridCoverage2D weightingSurface, int relocationIterations, int maxRelocationDistance, int splatRadius)
-            throws NoSuchAuthorityCodeException, FactoryException, SchemaException, InvalidGridGeometryException, TransformException {
+    public SimpleFeatureCollection getFuzzyRelocatedSurface(SimpleFeatureCollection csvCollection, GridCoverage2D weightingSurface, 
+            int relocationIterations, int maxRelocationDistance, int splatRadius, String outputPath)
+            throws NoSuchAuthorityCodeException, FactoryException, SchemaException, InvalidGridGeometryException, TransformException, IOException {
 
         //build a new feature collection for offset points
         SimpleFeatureCollection offsetCollection = FeatureCollections.newCollection();
@@ -116,7 +118,14 @@ public class WeightedFuzzy {
             //close the iterator
             csvCollection.close(iterator);
         }
-
+        
+        //build a grid coverage from the writable raster
+        GridCoverageFactory factory = new GridCoverageFactory();
+        GridCoverage2D output = factory.create("output", outputSurface, weightingSurface.getEnvelope());
+        
+        //write the file
+        FileHandler.writeGeoTiffFile(weightingSurface, outputPath);
+        
         return offsetCollection;
     }
 

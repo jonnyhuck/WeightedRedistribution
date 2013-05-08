@@ -13,6 +13,7 @@ import java.awt.image.WritableRaster;
 import javax.media.jai.RasterFactory;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridEnvelope2D;
+import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.FileDataStore;
 import org.geotools.data.FileDataStoreFinder;
@@ -40,10 +41,13 @@ import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.operation.TransformException;
 import org.opengis.style.ContrastMethod;
 import org.geotools.data.simple.SimpleFeatureIterator;
+import org.geotools.gce.geotiff.GeoTiffFormat;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
+import org.opengis.parameter.GeneralParameterValue;
+import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 
@@ -208,7 +212,7 @@ public class FileHandler {
         GeoTiffWriter gw = new GeoTiffWriter(path);
 
         try {
-            
+
             //write the file
             gw.write(gc, null);
 
@@ -217,29 +221,29 @@ public class FileHandler {
             gw.dispose();
         }
     }
-    
+
     /**
      * Returns a blank writable raster based upon the gc given
      * @param template
      * @return 
      */
-    public static WritableRaster getWritableRaster(GridCoverage2D template, double initialValue){
-        
+    public static WritableRaster getWritableRaster(GridCoverage2D template, double initialValue) {
+
         //get raster dimensions
         final GridEnvelope2D envelope = template.getGridGeometry().getGridRange2D();
-        final int width  = (int) envelope.getSpan(0);
+        final int width = (int) envelope.getSpan(0);
         final int height = (int) envelope.getSpan(1);
 
         //build writable raster
         WritableRaster raster = RasterFactory.createBandedRaster(DataBuffer.TYPE_DOUBLE, width, height, 1, null);
-        
+
         //populate with initial value
-        for (int y=0; y<height; y++) {
-            for (int x=0; x<width; x++) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
                 raster.setSample(x, y, 0, initialValue);
             }
         }
-        
+
         return raster;
-    } 
+    }
 }
