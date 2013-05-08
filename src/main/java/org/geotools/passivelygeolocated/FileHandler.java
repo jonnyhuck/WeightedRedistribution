@@ -13,7 +13,6 @@ import java.awt.image.WritableRaster;
 import javax.media.jai.RasterFactory;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridEnvelope2D;
-import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.FileDataStore;
 import org.geotools.data.FileDataStoreFinder;
@@ -41,13 +40,10 @@ import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.operation.TransformException;
 import org.opengis.style.ContrastMethod;
 import org.geotools.data.simple.SimpleFeatureIterator;
-import org.geotools.gce.geotiff.GeoTiffFormat;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
-import org.opengis.parameter.GeneralParameterValue;
-import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 
@@ -207,21 +203,18 @@ public class FileHandler {
      */
     public static void writeGeoTiffFile(GridCoverage2D gc, String path) throws IOException {
 
-
         //create a geotiff writer
-        GeoTiffWriter gw = new GeoTiffWriter(path);
-
+        File file = new File(path); 
+        GeoTiffWriter gw = new GeoTiffWriter(file);
         try {
-
             //write the file
             gw.write(gc, null);
-
         } finally {
             //destroy the writer
             gw.dispose();
         }
     }
-
+       
     /**
      * Returns a blank writable raster based upon the gc given
      * @param template
