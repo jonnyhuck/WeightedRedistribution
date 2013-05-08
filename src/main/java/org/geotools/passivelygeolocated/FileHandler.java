@@ -12,6 +12,7 @@ import java.awt.image.DataBuffer;
 import java.awt.image.WritableRaster;
 import javax.media.jai.RasterFactory;
 import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.grid.GridEnvelope2D;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.FileDataStore;
 import org.geotools.data.FileDataStoreFinder;
@@ -41,7 +42,6 @@ import org.opengis.style.ContrastMethod;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
-import org.geotools.geometry.Envelope2D;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -226,10 +226,10 @@ public class FileHandler {
     public static WritableRaster getWritableRaster(GridCoverage2D template, double initialValue){
         
         //get raster dimensions
-        final Envelope2D envelope = template.getEnvelope2D();
-        final int width  = (int) envelope.getWidth();
-        final int height = (int) envelope.getHeight();
-        
+        final GridEnvelope2D envelope = template.getGridGeometry().getGridRange2D();
+        final int width  = (int) envelope.getSpan(0);
+        final int height = (int) envelope.getSpan(1);
+
         //build writable raster
         WritableRaster raster = RasterFactory.createBandedRaster(DataBuffer.TYPE_DOUBLE, width, height, 1, null);
         

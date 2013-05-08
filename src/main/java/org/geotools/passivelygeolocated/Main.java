@@ -51,7 +51,7 @@ public class Main {
         SimpleFeatureCollection csvCollection = csvSource.getFeatures();
         
         WeightedFuzzy wf = new WeightedFuzzy();
-        SimpleFeatureCollection offsetCollection = wf.getFuzzyRelocatedSurface(csvCollection, weightingSurface, 10, 10000);
+        SimpleFeatureCollection offsetCollection = wf.getFuzzyRelocatedSurface(csvCollection, weightingSurface, 10, 10000, 10000);
         
         // Create a map context and add our shapefile to it
         MapContext map = new DefaultMapContext();

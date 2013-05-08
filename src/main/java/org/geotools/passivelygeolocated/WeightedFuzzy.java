@@ -40,8 +40,8 @@ public class WeightedFuzzy {
      * @throws FactoryException
      * @throws SchemaException 
      */
-    public SimpleFeatureCollection getFuzzyRelocatedSurface(SimpleFeatureCollection csvCollection, GridCoverage2D weightingSurface,
-            int relocationIterations, int maxRelocationDistance)
+    public SimpleFeatureCollection getFuzzyRelocatedSurface(SimpleFeatureCollection csvCollection, 
+            GridCoverage2D weightingSurface, int relocationIterations, int maxRelocationDistance, int splatRadius)
             throws NoSuchAuthorityCodeException, FactoryException, SchemaException {
 
         //build a new feature collection for offset points
@@ -52,8 +52,16 @@ public class WeightedFuzzy {
         //get an output surface
         WritableRaster outputSurface = FileHandler.getWritableRaster(weightingSurface, 0);
 
-        //build the matrix to represent each 'splat'
-        double[][] splat = this.getFuzzyMatrix(10000, 1000);
+        //build the matrix to represent each 'splat' (2D then flatten to 1D)
+        double[][] splat2D = this.getFuzzyMatrix(splatRadius, 1000);
+        double[] splat1D = new double[(int)Math.pow(splat2D[0].length, 2)];
+        int j;
+        int k;
+        for (int i = 0; i < Math.pow(splat2D[0].length, 2); i++) {
+            j = (int) i / splat2D[0].length;
+            k = i % splat2D[0].length;
+            splat1D[i] = splat2D[j][k];
+        }
 
         //get iterator to move through the input features
         SimpleFeatureIterator iterator = csvCollection.features();
@@ -71,26 +79,23 @@ public class WeightedFuzzy {
 
                     //offset
                     Point o = this.relocate(p, relocationIterations, maxRelocationDistance, weightingSurface);
-                    
+
                     //add to feature
                     featureBuilder.add(o);
                     SimpleFeature offsetFeature = featureBuilder.buildFeature(null);
-                    
-                    //add splat to raster
-                    //*****HERE*****//
-                    //outputSurface.setPixels(o.getX(), o.getY(), 10000, 10000, splat)
+
+                    //add splat to raster at the desired location
+                    //outputSurface.setPixels(, , 21, 21, splat1D);
 
                     //add the feature to a collection
                     offsetCollection.add(offsetFeature);
-
-                    //add splat to the surface at the desired location
-
                 }
             }
         } finally {
             //close the iterator
             csvCollection.close(iterator);
         }
+
         return offsetCollection;
     }
 
@@ -152,7 +157,8 @@ public class WeightedFuzzy {
     }
 
     /**
-     * Assesses whether or not a pixel is within span of the centre
+     * Assesses whether or not a pixel is within span of the centre, if so it 
+     *   returns the pixel distance
      * @param x
      * @param y
      * @param radPx
