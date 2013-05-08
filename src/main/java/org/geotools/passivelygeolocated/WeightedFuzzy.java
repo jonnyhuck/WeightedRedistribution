@@ -9,17 +9,13 @@ import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.InvalidGridGeometryException;
-import org.geotools.data.DataUtilities;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
-import org.geotools.feature.FeatureCollections;
 import org.geotools.feature.SchemaException;
-import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.referencing.CRS;
 import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.geometry.DirectPosition;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
@@ -45,14 +41,9 @@ public class WeightedFuzzy {
      * @throws FactoryException
      * @throws SchemaException 
      */
-    public SimpleFeatureCollection getFuzzyRelocatedSurface(SimpleFeatureCollection csvCollection, GridCoverage2D weightingSurface, 
+    public GridCoverage2D getFuzzyRelocatedSurface(SimpleFeatureCollection csvCollection, GridCoverage2D weightingSurface, 
             int relocationIterations, int maxRelocationDistance, int splatRadius, String outputPath)
             throws NoSuchAuthorityCodeException, FactoryException, SchemaException, InvalidGridGeometryException, TransformException, IOException {
-
-        //build a new feature collection for offset points
-        SimpleFeatureCollection offsetCollection = FeatureCollections.newCollection();
-        final SimpleFeatureType TYPE = DataUtilities.createType("Location", "location:Point:srid=27700,");  //srid=4326,");
-        SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(TYPE);
 
         //get an output surface
         WritableRaster outputSurface = FileHandler.getWritableRaster(weightingSurface, 0);
@@ -107,11 +98,6 @@ public class WeightedFuzzy {
 
                     //add splat to raster at the desired location
                     outputSurface.setPixels(topLeft.x, topLeft.y, splat2D[0].length, splat2D[0].length, patch);
-
-                    //add to feature and collection
-                    featureBuilder.add(o);
-                    SimpleFeature offsetFeature = featureBuilder.buildFeature(null);
-                    offsetCollection.add(offsetFeature);
                 }
             }
         } finally {
@@ -123,10 +109,9 @@ public class WeightedFuzzy {
         GridCoverageFactory factory = new GridCoverageFactory();
         GridCoverage2D output = factory.create("output", outputSurface, weightingSurface.getEnvelope());
         
-        //write the file
-        FileHandler.writeGeoTiffFile(weightingSurface, outputPath);
-        
-        return offsetCollection;
+        //write the file and return
+        FileHandler.writeGeoTiffFile(output, outputPath);
+        return output;
     }
 
     /**
