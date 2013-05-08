@@ -4,7 +4,9 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import java.awt.image.WritableRaster;
+import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.grid.InvalidGridGeometryException;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -20,6 +22,7 @@ import org.opengis.geometry.DirectPosition;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.operation.TransformException;
 
 /**
  *
@@ -42,7 +45,7 @@ public class WeightedFuzzy {
      */
     public SimpleFeatureCollection getFuzzyRelocatedSurface(SimpleFeatureCollection csvCollection, 
             GridCoverage2D weightingSurface, int relocationIterations, int maxRelocationDistance, int splatRadius)
-            throws NoSuchAuthorityCodeException, FactoryException, SchemaException {
+            throws NoSuchAuthorityCodeException, FactoryException, SchemaException, InvalidGridGeometryException, TransformException {
 
         //build a new feature collection for offset points
         SimpleFeatureCollection offsetCollection = FeatureCollections.newCollection();
@@ -51,13 +54,18 @@ public class WeightedFuzzy {
 
         //get an output surface
         WritableRaster outputSurface = FileHandler.getWritableRaster(weightingSurface, 0);
+        
+        //get pixel size
+        final int pxWidth  = (int) weightingSurface.getGridGeometry().getGridRange2D().getSpan(0);
+        final int mWidth  = (int) weightingSurface.getEnvelope2D().getSpan(0);
+        final int pxSize = mWidth / pxWidth;
 
-        //build the matrix to represent each 'splat' (2D then flatten to 1D)
-        double[][] splat2D = this.getFuzzyMatrix(splatRadius, 1000);
-        double[] splat1D = new double[(int)Math.pow(splat2D[0].length, 2)];
-        int j;
-        int k;
-        for (int i = 0; i < Math.pow(splat2D[0].length, 2); i++) {
+        //build the 2D matrix to represent each 'splat', then 'flatten' to 1D array
+        double[][] splat2D = this.getFuzzyMatrix(splatRadius, pxSize);
+        final int nCells = (int) Math.pow(splat2D[0].length, 2);
+        double[] splat1D = new double[nCells];
+        int j, k;
+        for (int i = 0; i < nCells; i++) {
             j = (int) i / splat2D[0].length;
             k = i % splat2D[0].length;
             splat1D[i] = splat2D[j][k];
@@ -80,14 +88,27 @@ public class WeightedFuzzy {
                     //offset
                     Point o = this.relocate(p, relocationIterations, maxRelocationDistance, weightingSurface);
 
-                    //add to feature
-                    featureBuilder.add(o);
-                    SimpleFeature offsetFeature = featureBuilder.buildFeature(null);
+                    //The coordinates at which the patch will be applied
+                    CoordinateReferenceSystem crs = CRS.decode("EPSG:27700");
+                    DirectPosition position = new DirectPosition2D(crs, o.getX(), o.getY());
+                    GridCoordinates2D topLeft = weightingSurface.getGridGeometry().worldToGrid(position);
+
+                    //get the existing surface data to apply the patch to
+                    double[] existingData = new double[nCells];
+                    outputSurface.getPixels(topLeft.x, topLeft.y, splat2D[0].length, splat2D[0].length, existingData);
+                    
+                    //add the patch to the existing data
+                    double[] patch = new double[nCells];
+                    for (int i = 0; i < nCells; i++){
+                        patch[i] = existingData[i] + splat1D[i];
+                    }
 
                     //add splat to raster at the desired location
-                    //outputSurface.setPixels(, , 21, 21, splat1D);
+                    outputSurface.setPixels(topLeft.x, topLeft.y, splat2D[0].length, splat2D[0].length, patch);
 
-                    //add the feature to a collection
+                    //add to feature and collection
+                    featureBuilder.add(o);
+                    SimpleFeature offsetFeature = featureBuilder.buildFeature(null);
                     offsetCollection.add(offsetFeature);
                 }
             }
