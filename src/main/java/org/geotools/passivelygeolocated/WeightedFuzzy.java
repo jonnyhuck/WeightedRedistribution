@@ -15,6 +15,7 @@ import org.geotools.feature.SchemaException;
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.referencing.CRS;
+import org.opengis.coverage.PointOutsideCoverageException;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.geometry.DirectPosition;
 import org.opengis.referencing.FactoryException;
@@ -41,16 +42,16 @@ public class WeightedFuzzy {
      * @throws FactoryException
      * @throws SchemaException 
      */
-    public GridCoverage2D getFuzzyRelocatedSurface(SimpleFeatureCollection csvCollection, GridCoverage2D weightingSurface, 
+    public GridCoverage2D getFuzzyRelocatedSurface(SimpleFeatureCollection csvCollection, GridCoverage2D weightingSurface,
             int relocationIterations, int maxRelocationDistance, int splatRadius, String outputPath)
             throws NoSuchAuthorityCodeException, FactoryException, SchemaException, InvalidGridGeometryException, TransformException, IOException {
 
         //get an output surface
         WritableRaster outputSurface = FileHandler.getWritableRaster(weightingSurface, 0);
-        
+
         //get pixel size
-        final int pxWidth  = (int) weightingSurface.getGridGeometry().getGridRange2D().getSpan(0);
-        final int mWidth  = (int) weightingSurface.getEnvelope2D().getSpan(0);
+        final int pxWidth = (int) weightingSurface.getGridGeometry().getGridRange2D().getSpan(0);
+        final int mWidth = (int) weightingSurface.getEnvelope2D().getSpan(0);
         final int pxSize = mWidth / pxWidth;
 
         //build the 2D matrix to represent each 'splat', then 'flatten' to 1D array
@@ -78,21 +79,23 @@ public class WeightedFuzzy {
                 //test that a default geom was set
                 if (p != null) {
 
-                    //offset
-                    Point o = this.relocate(p, relocationIterations, maxRelocationDistance, weightingSurface);
+                    //offset the point, then get the position of the top left of the patch
+                    Point offsetPoint = this.relocate(p, relocationIterations, maxRelocationDistance, weightingSurface);
+                    Point patchTopLeft = this.cartesianOffset(offsetPoint, 
+                            Math.sqrt(Math.pow(splat2D[0].length, 2) + Math.pow(splat2D[0].length, 2)), 315);
 
                     //The coordinates at which the patch will be applied
                     CoordinateReferenceSystem crs = CRS.decode("EPSG:27700");
-                    DirectPosition position = new DirectPosition2D(crs, o.getX(), o.getY());
+                    DirectPosition position = new DirectPosition2D(crs, patchTopLeft.getX(), patchTopLeft.getY());
                     GridCoordinates2D topLeft = weightingSurface.getGridGeometry().worldToGrid(position);
 
                     //get the existing surface data to apply the patch to
                     double[] existingData = new double[nCells];
                     outputSurface.getPixels(topLeft.x, topLeft.y, splat2D[0].length, splat2D[0].length, existingData);
-                    
+
                     //add the patch to the existing data
                     double[] patch = new double[nCells];
-                    for (int i = 0; i < nCells; i++){
+                    for (int i = 0; i < nCells; i++) {
                         patch[i] = existingData[i] + splat1D[i];
                     }
 
@@ -104,11 +107,11 @@ public class WeightedFuzzy {
             //close the iterator
             csvCollection.close(iterator);
         }
-        
+
         //build a grid coverage from the writable raster
         GridCoverageFactory factory = new GridCoverageFactory();
         GridCoverage2D output = factory.create("output", outputSurface, weightingSurface.getEnvelope());
-        
+
         //write the file and return
         FileHandler.writeGeoTiffFile(output, outputPath);
         return output;
@@ -208,8 +211,13 @@ public class WeightedFuzzy {
         CoordinateReferenceSystem crs = CRS.decode("EPSG:27700");
         DirectPosition position = new DirectPosition2D(crs, point.getX(), point.getY());
         double[] bands = new double[1];
-        weightingSurface.evaluate(position, bands);
-        return bands[0];
+        try {
+            weightingSurface.evaluate(position, bands);
+            return bands[0];
+        } catch (PointOutsideCoverageException e) {
+            //if the point is not withi the weighting data
+            return 0;
+        }
     }
 
     /**

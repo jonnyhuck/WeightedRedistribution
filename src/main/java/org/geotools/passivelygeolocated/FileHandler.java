@@ -98,20 +98,22 @@ public class FileHandler {
                     //split the line by commas
                     String tokens[] = line.split("\\,");
 
-                    //parse the data into variables
-                    double latitude = Double.parseDouble(tokens[1]);
-                    double longitude = Double.parseDouble(tokens[0]);
+                    if (!tokens[1].equals("") && !tokens[2].equals("")) {
 
-                    //create a point 
-                    /* Longitude (= x coord) first ! */
-                    Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+                        //parse the data into variables
+                        double latitude = Double.parseDouble(tokens[1]);
+                        double longitude = Double.parseDouble(tokens[2]);
 
-                    //add all of the attributes to a feature
-                    featureBuilder.add(point);
-                    SimpleFeature feature = featureBuilder.buildFeature(null);
+                        //create a point 
+                        Point point = geometryFactory.createPoint(new Coordinate(latitude, longitude));
 
-                    //add the feature to a collection
-                    collection.add(feature);
+                        //add all of the attributes to a feature
+                        featureBuilder.add(point);
+                        SimpleFeature feature = featureBuilder.buildFeature(null);
+
+                        //add the feature to a collection
+                        collection.add(feature);
+                    }
                 }
             }
         } finally {
@@ -204,7 +206,7 @@ public class FileHandler {
     public static void writeGeoTiffFile(GridCoverage2D gc, String path) throws IOException {
 
         //create a geotiff writer
-        File file = new File(path); 
+        File file = new File(path);
         GeoTiffWriter gw = new GeoTiffWriter(file);
         try {
             //write the file
@@ -214,7 +216,7 @@ public class FileHandler {
             gw.dispose();
         }
     }
-       
+
     /**
      * Returns a blank writable raster based upon the gc given
      * @param template
