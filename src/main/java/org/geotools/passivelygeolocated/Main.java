@@ -53,15 +53,15 @@ public class Main {
         if (tif == null) {
             return;
         }
-        GridCoverageLayer rasterLayer = FileHandler.openGeoTiffFile(tif);
-        GridCoverage2D weightingSurface = rasterLayer.getCoverage();
+        GridCoverage2D weightingSurface = FileHandler.openGeoTiffFile(tif);
 
         //offset the csv data for testing
         SimpleFeatureCollection csvCollection = pointSource.getFeatures();
         
         //get the output surface
         WeightedFuzzy wf = new WeightedFuzzy();
-        GridCoverage2D gcOut = wf.getFuzzyRelocatedSurface(csvCollection, weightingSurface, 10, 10000, 10000, "/Users/jonnyhuck/Documents/wfr.tif");
+        GridCoverage2D gcOut = wf.getFuzzyRelocatedSurface(csvCollection, 
+                weightingSurface, 10, 10000, 10000, "/Users/jonnyhuck/Documents/wfr.tif");
         
         //create greyscale style
         StyleFactory sf = CommonFactoryFinder.getStyleFactory(null);

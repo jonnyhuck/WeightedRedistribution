@@ -3,11 +3,14 @@ package org.geotools.passivelygeolocated;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
+import java.awt.image.DataBuffer;
 import java.awt.image.WritableRaster;
 import java.io.IOException;
+import javax.media.jai.RasterFactory;
 import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
+import org.geotools.coverage.grid.GridEnvelope2D;
 import org.geotools.coverage.grid.InvalidGridGeometryException;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -54,7 +57,7 @@ public class WeightedFuzzy {
             throws NoSuchAuthorityCodeException, FactoryException, SchemaException, InvalidGridGeometryException, TransformException, IOException {
 
         //get an output surface
-        WritableRaster outputSurface = FileHandler.getWritableRaster(weightingSurface, 0);
+        WritableRaster outputSurface = this.getWritableRaster(weightingSurface, 0);
 
         //get pixel size
         final int pxWidth = (int) weightingSurface.getGridGeometry().getGridRange2D().getSpan(0);
@@ -235,6 +238,31 @@ public class WeightedFuzzy {
         }
     }
 
+     /**
+     * Returns a blank writable raster based upon the gc given
+     * @param template
+     * @return 
+     */
+    private WritableRaster getWritableRaster(GridCoverage2D template, double initialValue) {
+
+        //get raster dimensions
+        final GridEnvelope2D envelope = template.getGridGeometry().getGridRange2D();
+        final int width = (int) envelope.getSpan(0);
+        final int height = (int) envelope.getSpan(1);
+
+        //build writable raster
+        WritableRaster raster = RasterFactory.createBandedRaster(DataBuffer.TYPE_DOUBLE, width, height, 1, null);
+
+        //populate with initial value
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                raster.setSample(x, y, 0, initialValue);
+            }
+        }
+
+        return raster;
+    }
+    
     /**
      * Offset a point along a spherical surface
      * @param point
