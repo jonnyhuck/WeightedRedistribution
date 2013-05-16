@@ -98,11 +98,11 @@ public class FileHandler {
                     //split the line by commas
                     String tokens[] = line.split("\\,");
 
-                    if (!tokens[1].equals("") && !tokens[2].equals("")) {
+                    if (!tokens[0].equals("") && !tokens[1].equals("")) {
 
                         //parse the data into variables
-                        double latitude = Double.parseDouble(tokens[1]);
-                        double longitude = Double.parseDouble(tokens[2]);
+                        double latitude = Double.parseDouble(tokens[0]);
+                        double longitude = Double.parseDouble(tokens[1]);
 
                         //create a point 
                         Point point = geometryFactory.createPoint(new Coordinate(latitude, longitude));

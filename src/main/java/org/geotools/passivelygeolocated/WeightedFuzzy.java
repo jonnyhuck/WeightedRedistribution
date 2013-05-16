@@ -31,16 +31,23 @@ public class WeightedFuzzy {
 
     //radius of sphere for offset (wgs84 def.)
     private final int earthRadius = 6378137;
+    private int cockups = 0;
 
     /**
-     * 
+     * Get the output surface
      * @param csvCollection
      * @param weightingSurface
      * @param relocationIterations
      * @param maxRelocationDistance
+     * @param splatRadius
+     * @param outputPath
+     * @return surface of features that have been weighted fuzzy relocated
      * @throws NoSuchAuthorityCodeException
      * @throws FactoryException
-     * @throws SchemaException 
+     * @throws SchemaException
+     * @throws InvalidGridGeometryException
+     * @throws TransformException
+     * @throws IOException 
      */
     public GridCoverage2D getFuzzyRelocatedSurface(SimpleFeatureCollection csvCollection, GridCoverage2D weightingSurface,
             int relocationIterations, int maxRelocationDistance, int splatRadius, String outputPath)
@@ -81,7 +88,7 @@ public class WeightedFuzzy {
 
                     //offset the point, then get the position of the top left of the patch
                     Point offsetPoint = this.relocate(p, relocationIterations, maxRelocationDistance, weightingSurface);
-                    Point patchTopLeft = this.cartesianOffset(offsetPoint, 
+                    Point patchTopLeft = this.cartesianOffset(offsetPoint,
                             Math.sqrt(Math.pow(splat2D[0].length, 2) + Math.pow(splat2D[0].length, 2)), 315);
 
                     //The coordinates at which the patch will be applied
@@ -91,21 +98,27 @@ public class WeightedFuzzy {
 
                     //get the existing surface data to apply the patch to
                     double[] existingData = new double[nCells];
-                    outputSurface.getPixels(topLeft.x, topLeft.y, splat2D[0].length, splat2D[0].length, existingData);
+                    try {
+                        outputSurface.getPixels(topLeft.x, topLeft.y, splat2D[0].length, splat2D[0].length, existingData);
 
-                    //add the patch to the existing data
-                    double[] patch = new double[nCells];
-                    for (int i = 0; i < nCells; i++) {
-                        patch[i] = existingData[i] + splat1D[i];
+                        //add the patch to the existing data
+                        double[] patch = new double[nCells];
+                        for (int i = 0; i < nCells; i++) {
+                            patch[i] = existingData[i] + splat1D[i];
+                        }
+
+                        //add splat to raster at the desired location
+                        outputSurface.setPixels(topLeft.x, topLeft.y, splat2D[0].length, splat2D[0].length, patch);
+                        
+                    } catch (java.lang.ArrayIndexOutOfBoundsException e) {
+                        cockups++;
                     }
-
-                    //add splat to raster at the desired location
-                    outputSurface.setPixels(topLeft.x, topLeft.y, splat2D[0].length, splat2D[0].length, patch);
                 }
             }
         } finally {
             //close the iterator
             csvCollection.close(iterator);
+            System.out.println("cockup count: " + cockups);
         }
 
         //build a grid coverage from the writable raster
@@ -123,7 +136,7 @@ public class WeightedFuzzy {
      * @param point
      * @param iterations
      * @param maxDistance
-     * @return 
+     * @return a point that has been fuzzy relocated
      */
     private Point relocate(Point point, int iterations, double maxDistance, GridCoverage2D weightingSurface)
             throws NoSuchAuthorityCodeException, FactoryException {
@@ -153,7 +166,9 @@ public class WeightedFuzzy {
 
     /**
      * Creates a matrix of values to be applied to the output surface
-     * @param radius 
+     * @param radius
+     * @param pixelSize
+     * @return a matrix of values 
      */
     private double[][] getFuzzyMatrix(int radius, double pixelSize) {
 
@@ -180,7 +195,7 @@ public class WeightedFuzzy {
      * @param x
      * @param y
      * @param radPx
-     * @return 
+     * @return the distance from the centre of the splat
      */
     private double getMatrixValue(int x, int y, int radPx) {
 
@@ -200,7 +215,7 @@ public class WeightedFuzzy {
      * Returns a value from a raster at a given coordinate
      * @param point
      * @param weightingSurface
-     * @return
+     * @return value taken from the raster at the given location
      * @throws NoSuchAuthorityCodeException
      * @throws FactoryException 
      */
@@ -225,7 +240,7 @@ public class WeightedFuzzy {
      * @param point
      * @param distance
      * @param azimuth
-     * @return 
+     * @return a point offset across a sphere by the specified distance and direction
      */
     public Point sphericalOffset(Point point, double distance, double azimuth) {
 
@@ -256,7 +271,7 @@ public class WeightedFuzzy {
      * @param point
      * @param distance
      * @param azimuth
-     * @return 
+     * @return a point offset across a cartesian surface  by the givern distance and bearing
      */
     public Point cartesianOffset(Point point, double distance, double azimuth) {
 
@@ -272,7 +287,7 @@ public class WeightedFuzzy {
     /**
      * Convert degrees to radians
      * @param degrees
-     * @return 
+     * @return the equivalent value in radians
      */
     private double deg2rad(double degrees) {
         return degrees * (Math.PI / 180);
@@ -281,7 +296,7 @@ public class WeightedFuzzy {
     /**
      * Convert radians to degrees
      * @param radians
-     * @return 
+     * @return the equivalent value in degrees
      */
     private double rad2deg(double radians) {
         return radians * (180 / Math.PI);

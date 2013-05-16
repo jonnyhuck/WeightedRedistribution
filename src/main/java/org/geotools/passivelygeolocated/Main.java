@@ -33,20 +33,20 @@ public class Main {
      * @throws Exception 
      */
     public static void main(String[] args) throws Exception {
-
+        
         // display a data store file chooser dialog for csv files
-        File csv = JFileDataStoreChooser.showOpenFile("csv", null);
-        if (csv == null) {
+        File points = JFileDataStoreChooser.showOpenFile("shp", null);
+        if (points == null) {
             return;
         }
-        SimpleFeatureSource csvSource = FileHandler.transformFeature(FileHandler.importCSV(csv));
+        SimpleFeatureSource pointSource = FileHandler.openShapefile(points);
 
         // display a data store file chooser dialog for shapefiles
-        File shp = JFileDataStoreChooser.showOpenFile("shp", null);
-        if (shp == null) {
+        File boundaries = JFileDataStoreChooser.showOpenFile("shp", null);
+        if (boundaries == null) {
             return;
         }
-        SimpleFeatureSource shpSource = FileHandler.openShapefile(shp);
+        SimpleFeatureSource boundarySource = FileHandler.openShapefile(boundaries);
 
         // display a data store file chooser dialog for ESRI tifii grid
         File tif = JFileDataStoreChooser.showOpenFile("tif", null);
@@ -57,10 +57,10 @@ public class Main {
         GridCoverage2D weightingSurface = rasterLayer.getCoverage();
 
         //offset the csv data for testing
-        SimpleFeatureCollection csvCollection = csvSource.getFeatures();
+        SimpleFeatureCollection csvCollection = pointSource.getFeatures();
         
+        //get the output surface
         WeightedFuzzy wf = new WeightedFuzzy();
-        //SimpleFeatureCollection offsetCollection = wf.getFuzzyRelocatedSurface(csvCollection, weightingSurface, 10, 10000, 10000, "/Users/jonnyhuck/Documents/wfr.tif");
         GridCoverage2D gcOut = wf.getFuzzyRelocatedSurface(csvCollection, weightingSurface, 10, 10000, 10000, "/Users/jonnyhuck/Documents/wfr.tif");
         
         //create greyscale style
