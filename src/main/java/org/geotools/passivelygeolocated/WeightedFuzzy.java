@@ -112,7 +112,7 @@ public class WeightedFuzzy {
 
                         //add splat to raster at the desired location
                         outputSurface.setPixels(topLeft.x, topLeft.y, splat2D[0].length, splat2D[0].length, patch);
-                        
+
                     } catch (java.lang.ArrayIndexOutOfBoundsException e) {
                         cockups++;
                     }
@@ -238,7 +238,7 @@ public class WeightedFuzzy {
         }
     }
 
-     /**
+    /**
      * Returns a blank writable raster based upon the gc given
      * @param template
      * @return 
@@ -261,37 +261,6 @@ public class WeightedFuzzy {
         }
 
         return raster;
-    }
-    
-    /**
-     * Offset a point along a spherical surface
-     * @param point
-     * @param distance
-     * @param azimuth
-     * @return a point offset across a sphere by the specified distance and direction
-     */
-    public Point sphericalOffset(Point point, double distance, double azimuth) {
-
-        //convert to angular distance in radians
-        double distR = distance / earthRadius;
-
-        //convert to radians
-        double azimuthR = deg2rad(azimuth);
-        double lngR = deg2rad(point.getX());
-        double latR = deg2rad(point.getY());
-
-        //offset across a sphere
-        double lat = rad2deg(Math.asin(Math.sin(latR) * Math.cos(distR)
-                + Math.cos(latR) * Math.sin(distR) * Math.cos(azimuthR)));
-
-        //(includes normalisation for -180 - 180)
-        double lng = (rad2deg(lngR + Math.atan2(Math.sin(azimuthR) * Math.sin(distR)
-                * Math.cos(latR), Math.cos(distR) - Math.sin(latR)
-                * Math.sin(deg2rad(lat)))) + 540 % 360) - 180;
-
-        //build a point object from the results
-        GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory(null);
-        return geometryFactory.createPoint(new Coordinate(lng, lat));
     }
 
     /**
@@ -329,4 +298,29 @@ public class WeightedFuzzy {
     private double rad2deg(double radians) {
         return radians * (180 / Math.PI);
     }
+    /*
+    public Point sphericalOffset(Point point, double distance, double azimuth) {
+    
+    //convert to angular distance in radians
+    double distR = distance / earthRadius;
+    
+    //convert to radians
+    double azimuthR = deg2rad(azimuth);
+    double lngR = deg2rad(point.getX());
+    double latR = deg2rad(point.getY());
+    
+    //offset across a sphere
+    double lat = rad2deg(Math.asin(Math.sin(latR) * Math.cos(distR)
+    + Math.cos(latR) * Math.sin(distR) * Math.cos(azimuthR)));
+    
+    //(includes normalisation for -180 - 180)
+    double lng = (rad2deg(lngR + Math.atan2(Math.sin(azimuthR) * Math.sin(distR)
+     * Math.cos(latR), Math.cos(distR) - Math.sin(latR)
+     * Math.sin(deg2rad(lat)))) + 540 % 360) - 180;
+    
+    //build a point object from the results
+    GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory(null);
+    return geometryFactory.createPoint(new Coordinate(lng, lat));
+    }
+     */
 }
