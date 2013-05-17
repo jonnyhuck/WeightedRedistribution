@@ -2,12 +2,10 @@ package org.geotools.passivelygeolocated;
 
 import java.io.File;
 import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.swing.data.JFileDataStoreChooser;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.map.DefaultMapContext;
-import org.geotools.map.GridCoverageLayer;
 import org.geotools.map.MapContext;
 import org.geotools.styling.ChannelSelection;
 import org.geotools.styling.ContrastEnhancement;
@@ -46,7 +44,7 @@ public class Main {
         if (boundaries == null) {
             return;
         }
-        SimpleFeatureSource boundarySource = FileHandler.openShapefile(boundaries);
+        SimpleFeatureSource polygonSource = FileHandler.openShapefile(boundaries);
 
         // display a data store file chooser dialog for ESRI tifii grid
         File tif = JFileDataStoreChooser.showOpenFile("tif", null);
@@ -54,14 +52,13 @@ public class Main {
             return;
         }
         GridCoverage2D weightingSurface = FileHandler.openGeoTiffFile(tif);
-
-        //offset the csv data for testing
-        SimpleFeatureCollection csvCollection = pointSource.getFeatures();
         
         //get the output surface
         WeightedFuzzy wf = new WeightedFuzzy();
-        GridCoverage2D gcOut = wf.getFuzzyRelocatedSurface(csvCollection, 
-                weightingSurface, 10, 10000, 10000, "/Users/jonnyhuck/Documents/wfr.tif");
+        //GridCoverage2D gcOut = wf.getFuzzyRelocatedSurface(csvCollection, 
+        //        weightingSurface, 10, 10000, 10000, "/Users/jonnyhuck/Documents/wfr.tif");
+        GridCoverage2D gcOut = wf.getFuzzyRelocatedSurface2(pointSource, polygonSource,
+                weightingSurface, 10, 10000, "/Users/jonnyhuck/Documents/wfr.tif");
         
         //create greyscale style
         StyleFactory sf = CommonFactoryFinder.getStyleFactory(null);

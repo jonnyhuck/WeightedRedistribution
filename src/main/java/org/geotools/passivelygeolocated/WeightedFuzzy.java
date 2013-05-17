@@ -1,9 +1,9 @@
 package org.geotools.passivelygeolocated;
 
 import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.geom.Polygon;
 import java.awt.image.DataBuffer;
 import java.awt.image.WritableRaster;
 import java.io.IOException;
@@ -13,11 +13,10 @@ import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.GridEnvelope2D;
 import org.geotools.coverage.grid.InvalidGridGeometryException;
-import org.geotools.data.FeatureSource;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
+import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.factory.CommonFactoryFinder;
-import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.SchemaException;
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.geometry.jts.JTSFactoryFinder;
@@ -58,7 +57,7 @@ public class WeightedFuzzy {
      * @throws TransformException
      * @throws IOException 
      */
-    public GridCoverage2D getFuzzyRelocatedSurface(SimpleFeatureCollection csvCollection, GridCoverage2D weightingSurface,
+    /*public GridCoverage2D getFuzzyRelocatedSurface(SimpleFeatureCollection csvCollection, GridCoverage2D weightingSurface,
             int relocationIterations, int maxRelocationDistance, int splatRadius, String outputPath)
             throws NoSuchAuthorityCodeException, FactoryException, SchemaException, InvalidGridGeometryException, TransformException, IOException {
 
@@ -83,7 +82,6 @@ public class WeightedFuzzy {
 
         //get iterator to move through the input features
         SimpleFeatureIterator iterator = csvCollection.features();
-
         try {
             //populate the new feature collection with offset points
             while (iterator.hasNext()) {
@@ -126,8 +124,131 @@ public class WeightedFuzzy {
             }
         } finally {
             //close the iterator
-            csvCollection.close(iterator);
+            iterator.close();
             System.out.println("cockup count: " + cockups);
+        }
+
+        //build a grid coverage from the writable raster
+        GridCoverageFactory factory = new GridCoverageFactory();
+        GridCoverage2D output = factory.create("output", outputSurface, weightingSurface.getEnvelope());
+
+        //write the file and return
+        FileHandler.writeGeoTiffFile(output, outputPath);
+        return output;
+    }*/
+
+    /**
+     * 
+     * @param points
+     * @param polygons
+     * @param weightingSurface
+     * @param relocationIterations
+     * @param pcOffsetDistance
+     * @param splatRadius
+     * @param outputPath
+     * @return
+     * @throws NoSuchAuthorityCodeException
+     * @throws FactoryException
+     * @throws SchemaException
+     * @throws InvalidGridGeometryException
+     * @throws TransformException
+     * @throws IOException 
+     */
+    public GridCoverage2D getFuzzyRelocatedSurface2(SimpleFeatureSource points, SimpleFeatureSource polygons,
+            GridCoverage2D weightingSurface, int relocationIterations, int splatRadius, String outputPath)
+            throws NoSuchAuthorityCodeException, FactoryException, SchemaException, InvalidGridGeometryException,
+            TransformException, IOException {
+
+        //get an output surface
+        WritableRaster outputSurface = this.getWritableRaster(weightingSurface, 0);
+
+        //get pixel size
+        final int pxWidth = (int) weightingSurface.getGridGeometry().getGridRange2D().getSpan(0);
+        final int mWidth = (int) weightingSurface.getEnvelope2D().getSpan(0);
+        final int pxSize = mWidth / pxWidth;
+
+        //build the 2D matrix to represent each 'splat', then 'flatten' to 1D array
+        double[][] splat2D = this.getFuzzyMatrix(splatRadius, pxSize);
+        final int nCells = (int) Math.pow(splat2D[0].length, 2);
+        double[] splat1D = new double[nCells];
+        int j, k;
+        for (int i = 0; i < nCells; i++) {
+            j = (int) i / splat2D[0].length;
+            k = i % splat2D[0].length;
+            splat1D[i] = splat2D[j][k];
+        }
+
+        //loop through the polygons
+        SimpleFeatureIterator polygonIterator = polygons.getFeatures().features();
+        try {
+            //populate the new feature collection with offset points
+            while (polygonIterator.hasNext()) {
+
+                //get next polygon
+                SimpleFeature polygonFeature = polygonIterator.next();
+
+                //get the max offset distance
+                Polygon polygon = (Polygon) polygonFeature.getDefaultGeometry();
+                double maxOffsetDistance = Math.sqrt(polygon.getArea() / Math.PI);
+
+                //get all points within it
+                SimpleFeatureCollection pointsWithin = this.getPointsWithin(polygonFeature, points);
+
+                //loop through the points
+                SimpleFeatureIterator pointsIterator = pointsWithin.features();
+                try {
+                    //populate the new feature collection with offset points
+                    while (pointsIterator.hasNext()) {
+
+                        //retrieve the feature then geom (as a JTS point)
+                        SimpleFeature pointFeature = pointsIterator.next();
+                        Point point = (Point) pointFeature.getDefaultGeometry();
+
+                        //test that a default geom was set
+                        if (point != null) {
+
+                            //offset the point, then get the position of the top left of the patch
+                            Point offsetPoint = this.relocate(point, polygon, relocationIterations, maxOffsetDistance, weightingSurface);
+                            Point patchTopLeft = this.cartesianOffset(offsetPoint,
+                                    Math.sqrt(Math.pow(splat2D[0].length, 2) + Math.pow(splat2D[0].length, 2)), 315);
+
+                            //The coordinates at which the patch will be applied
+                            CoordinateReferenceSystem crs = CRS.decode("EPSG:27700");
+                            DirectPosition position = new DirectPosition2D(crs, patchTopLeft.getX(), patchTopLeft.getY());
+                            GridCoordinates2D topLeft = weightingSurface.getGridGeometry().worldToGrid(position);
+
+                            //get the existing surface data to apply the patch to
+                            double[] existingData = new double[nCells];
+                            try {
+
+                                /*
+                                 * ERROR WHERE THE SPLAT GOES OFF THE EDGE OF THE SURFACE?
+                                 * NEED TO ALLOW FOR THIS...
+                                 */
+                                outputSurface.getPixels(topLeft.x, topLeft.y, splat2D[0].length, splat2D[0].length, existingData);
+
+                                //add the patch to the existing data
+                                double[] patch = new double[nCells];
+                                for (int i = 0; i < nCells; i++) {
+                                    patch[i] = existingData[i] + splat1D[i];
+                                }
+
+                                //add splat to raster at the desired location
+                                outputSurface.setPixels(topLeft.x, topLeft.y, splat2D[0].length, splat2D[0].length, patch);
+
+                            } catch (java.lang.ArrayIndexOutOfBoundsException e) {
+                                cockups++;
+                            }
+                        }
+                    }
+                } finally {
+                    //close the iterator
+                    pointsIterator.close();
+                    System.out.println("cockup count: " + cockups);
+                }
+            }
+        } finally {
+            polygonIterator.close();
         }
 
         //build a grid coverage from the writable raster
@@ -147,7 +268,7 @@ public class WeightedFuzzy {
      * @param maxDistance
      * @return a point that has been fuzzy relocated
      */
-    private Point relocate(Point point, int iterations, double maxDistance, GridCoverage2D weightingSurface)
+    private Point relocate(Point point, Polygon polygon, int iterations, double maxDistance, GridCoverage2D weightingSurface)
             throws NoSuchAuthorityCodeException, FactoryException {
 
         //holds max value
@@ -158,8 +279,12 @@ public class WeightedFuzzy {
         for (int i = 0; i < iterations; i++) {
 
             //offset the point and push into an array list
-            Point relocated = this.cartesianOffset(point, Math.rint(Math.random() * maxDistance),
-                    Math.rint(Math.random() * 359));
+            Point relocated;
+            do {    
+                //force the new point to be within the polygon
+                relocated = this.cartesianOffset(point, Math.rint(Math.random() * maxDistance),
+                        Math.rint(Math.random() * 359));
+            } while (!relocated.within(polygon));
 
             //test the weighting surface value
             double val = this.getValueFromRaster(relocated, weightingSurface);
@@ -268,7 +393,7 @@ public class WeightedFuzzy {
 
         return raster;
     }
-    
+
     /**
      * Gets all points within a given polygon
      * @param points
@@ -276,12 +401,12 @@ public class WeightedFuzzy {
      * @return feature collection of points that were within the polygon
      * @throws IOException 
      */
-    private FeatureCollection getChildPoints(FeatureSource points, Geometry polygon) throws IOException{
-        
+    private SimpleFeatureCollection getPointsWithin(SimpleFeature polygon, SimpleFeatureSource points) throws IOException {
+
         //create a filter to handle the 'within' query
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(null);
         Filter filter = ff.within(ff.literal(points), ff.literal(polygon));
-        
+
         //apply the filter to the feature source
         return points.getFeatures(filter);
     }
@@ -312,15 +437,6 @@ public class WeightedFuzzy {
     private double deg2rad(double degrees) {
         return degrees * (Math.PI / 180);
     }
-
-    /**
-     * Convert radians to degrees
-     * @param radians
-     * @return the equivalent value in degrees
-     */
-    private double rad2deg(double radians) {
-        return radians * (180 / Math.PI);
-    }
     /*
     public Point sphericalOffset(Point point, double distance, double azimuth) {
     
@@ -344,6 +460,9 @@ public class WeightedFuzzy {
     //build a point object from the results
     GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory(null);
     return geometryFactory.createPoint(new Coordinate(lng, lat));
+    }
+    private double rad2deg(double radians) {
+    return radians * (180 / Math.PI);
     }
      */
 }
