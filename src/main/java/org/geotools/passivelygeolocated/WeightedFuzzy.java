@@ -155,9 +155,8 @@ public class WeightedFuzzy {
      * @throws IOException 
      */
     public GridCoverage2D getFuzzyRelocatedSurface2(SimpleFeatureSource points, SimpleFeatureSource polygons,
-            GridCoverage2D weightingSurface, int relocationIterations, int splatRadius, String outputPath)
-            throws NoSuchAuthorityCodeException, FactoryException, SchemaException, InvalidGridGeometryException,
-            TransformException, IOException {
+            GridCoverage2D weightingSurface, int relocationIterations, int splatRadius) throws IOException, 
+            NoSuchAuthorityCodeException, FactoryException, InvalidGridGeometryException, TransformException {
 
         //get an output surface
         WritableRaster outputSurface = this.getWritableRaster(weightingSurface, 0);
@@ -254,9 +253,6 @@ public class WeightedFuzzy {
         //build a grid coverage from the writable raster
         GridCoverageFactory factory = new GridCoverageFactory();
         GridCoverage2D output = factory.create("output", outputSurface, weightingSurface.getEnvelope());
-
-        //write the file and return
-        FileHandler.writeGeoTiffFile(output, outputPath);
         return output;
     }
 

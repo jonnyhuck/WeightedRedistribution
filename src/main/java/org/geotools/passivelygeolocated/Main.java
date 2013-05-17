@@ -32,7 +32,7 @@ public class Main {
      */
     public static void main(String[] args) throws Exception {
         
-        // display a data store file chooser dialog for csv files
+        // display a data store file chooser dialog for shapefiles
         File points = JFileDataStoreChooser.showOpenFile("shp", null);
         if (points == null) {
             return;
@@ -40,13 +40,13 @@ public class Main {
         SimpleFeatureSource pointSource = FileHandler.openShapefile(points);
 
         // display a data store file chooser dialog for shapefiles
-        File boundaries = JFileDataStoreChooser.showOpenFile("shp", null);
-        if (boundaries == null) {
+        File polygons = JFileDataStoreChooser.showOpenFile("shp", null);
+        if (polygons == null) {
             return;
         }
-        SimpleFeatureSource polygonSource = FileHandler.openShapefile(boundaries);
+        SimpleFeatureSource polygonSource = FileHandler.openShapefile(polygons);
 
-        // display a data store file chooser dialog for ESRI tifii grid
+        // display a data store file chooser dialog for geotiff files
         File tif = JFileDataStoreChooser.showOpenFile("tif", null);
         if (tif == null) {
             return;
@@ -58,12 +58,15 @@ public class Main {
         //GridCoverage2D gcOut = wf.getFuzzyRelocatedSurface(csvCollection, 
         //        weightingSurface, 10, 10000, 10000, "/Users/jonnyhuck/Documents/wfr.tif");
         GridCoverage2D gcOut = wf.getFuzzyRelocatedSurface2(pointSource, polygonSource,
-                weightingSurface, 10, 10000, "/Users/jonnyhuck/Documents/wfr.tif");
+                weightingSurface, 10, 10000);
+        
+        //write the file
+        FileHandler.writeGeoTiffFile(gcOut, "/Users/jonnyhuck/Documents/wfr.tif");
         
         //create greyscale style
         StyleFactory sf = CommonFactoryFinder.getStyleFactory(null);
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(null);
-        ContrastEnhancement ce = sf.contrastEnhancement(ff.literal(1.0), ContrastMethod.NORMALIZE);
+        ContrastEnhancement ce = sf.contrastEnhancement(ff.literal(1.0), ContrastMethod.HISTOGRAM);
         SelectedChannelType sct = sf.createSelectedChannelType(String.valueOf(1), ce);
         RasterSymbolizer sym = sf.getDefaultRasterSymbolizer();
         ChannelSelection sel = sf.channelSelection(sct);
@@ -72,7 +75,7 @@ public class Main {
         
         // Create a map context and add our shapefile to it
         MapContext map = new DefaultMapContext();
-        map.setTitle("Passively Geolocated Data");
+        map.setTitle("Fuzzy Relocated Data");
         map.addLayer(gcOut, rasterStyle);
         
         // Now display the map
