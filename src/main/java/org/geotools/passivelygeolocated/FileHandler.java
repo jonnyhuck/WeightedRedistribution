@@ -32,7 +32,7 @@ public class FileHandler {
     }
 
     /**
-     * Open a GeoTiff file into a greyscaled Layer
+     * Open a GeoTiff file into a coverage
      * @param file
      * @return Layer
      */
@@ -47,7 +47,7 @@ public class FileHandler {
     }
 
     /**
-     * Writes a GridCoverage2D to a GeoTiff file
+     * Writes a coverage to a GeoTiff file
      * @param gc
      * @param path
      * @throws IOException 
@@ -65,45 +65,4 @@ public class FileHandler {
             gw.dispose();
         }
     }
-    /*    
-    public static SimpleFeatureSource transformFeature(SimpleFeatureSource sfs)
-    throws NoSuchAuthorityCodeException, FactoryException, IOException,
-    SchemaException, MismatchedDimensionException, TransformException {
-    
-    //get coordinate reference systems and transformation
-    CoordinateReferenceSystem wgs84 = CRS.decode("EPSG:4326");
-    CoordinateReferenceSystem osgb36 = CRS.decode("EPSG:27700");
-    MathTransform transform = CRS.findMathTransform(wgs84, osgb36, true);
-    
-    //get the features and an iterator from the input data
-    SimpleFeatureCollection featureCollection = sfs.getFeatures();
-    SimpleFeatureIterator iterator = featureCollection.features();
-    
-    //create an empty feature collection
-    SimpleFeatureCollection collection = FeatureCollections.newCollection();
-    final SimpleFeatureType TYPE = DataUtilities.createType("Location", "location:Point:srid=27700,");
-    SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(TYPE);
-    
-    try {
-    while (iterator.hasNext()) {
-    
-    //copy the contents of each feature and transform the geometry
-    SimpleFeature feature = iterator.next();
-    Geometry geometry = (Geometry) feature.getDefaultGeometry();
-    Geometry transformedGeometry = JTS.transform(geometry, transform);
-    
-    //add to the new feature collection
-    featureBuilder.add(transformedGeometry);
-    SimpleFeature transformedFeature = featureBuilder.buildFeature(null);
-    
-    //add the feature to a collection
-    collection.add(transformedFeature);
-    
-    }
-    } finally {
-    iterator.close();
-    }
-    return DataUtilities.source(collection);
-    }
-     */
 }
