@@ -1,6 +1,7 @@
 package org.geotools.passivelygeolocated;
 
 import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import java.awt.image.DataBuffer;
@@ -12,14 +13,19 @@ import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.GridEnvelope2D;
 import org.geotools.coverage.grid.InvalidGridGeometryException;
+import org.geotools.data.FeatureSource;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
+import org.geotools.factory.CommonFactoryFinder;
+import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.SchemaException;
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.referencing.CRS;
 import org.opengis.coverage.PointOutsideCoverageException;
 import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.filter.Filter;
+import org.opengis.filter.FilterFactory2;
 import org.opengis.geometry.DirectPosition;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
@@ -261,6 +267,23 @@ public class WeightedFuzzy {
         }
 
         return raster;
+    }
+    
+    /**
+     * Gets all points within a given polygon
+     * @param points
+     * @param polygon
+     * @return feature collection of points that were within the polygon
+     * @throws IOException 
+     */
+    private FeatureCollection getChildPoints(FeatureSource points, Geometry polygon) throws IOException{
+        
+        //create a filter to handle the 'within' query
+        FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(null);
+        Filter filter = ff.within(ff.literal(points), ff.literal(polygon));
+        
+        //apply the filter to the feature source
+        return points.getFeatures(filter);
     }
 
     /**
