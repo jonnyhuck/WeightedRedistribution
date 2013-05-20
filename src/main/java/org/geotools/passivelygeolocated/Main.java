@@ -55,9 +55,7 @@ public class Main {
         
         //get the output surface
         WeightedFuzzy wf = new WeightedFuzzy();
-        //GridCoverage2D gcOut = wf.getFuzzyRelocatedSurface(csvCollection, 
-        //        weightingSurface, 10, 10000, 10000, "/Users/jonnyhuck/Documents/wfr.tif");
-        GridCoverage2D gcOut = wf.getFuzzyRelocatedSurface2(pointSource, polygonSource,
+        GridCoverage2D gcOut = wf.getFuzzyRelocatedSurface(pointSource, polygonSource,
                 weightingSurface, 10, 10000);
         
         //write the file
