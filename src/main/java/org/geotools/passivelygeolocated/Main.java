@@ -59,7 +59,7 @@ public class Main {
                 weightingSurface, 10, 10000);
         
         //write the file
-        FileHandler.writeGeoTiffFile(gcOut, "/Users/jonnyhuck/Documents/wfr.tif");
+        FileHandler.writeGeoTiffFile(gcOut, "/Users/jonnyhuck/Documents/_level2.tif");
         
         //create greyscale style
         StyleFactory sf = CommonFactoryFinder.getStyleFactory(null);

@@ -4,6 +4,7 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.geom.Polygon;
 import java.awt.image.DataBuffer;
 import java.awt.image.WritableRaster;
 import java.io.IOException;
@@ -94,7 +95,7 @@ public class WeightedFuzzy {
 
                 //get the max offset distance
                 Geometry polygon = (Geometry) polygonFeature.getDefaultGeometry();
-                double maxOffsetDistance = Math.sqrt(polygon.getArea() / Math.PI) * 0.9;
+                double maxOffsetDistance = this.getBoundingRadius((Polygon) polygon); //Math.sqrt(polygon.getArea() / Math.PI);
 
                 //get all points within it
                 SimpleFeatureCollection pointsWithin = this.getPointsWithin(polygonFeature, points);
@@ -149,12 +150,12 @@ public class WeightedFuzzy {
                 } finally {
                     //close the iterator
                     pointsIterator.close();
-                    System.out.println("points: " + pointsWithin.size());
+                    /*System.out.println("points: " + pointsWithin.size());
                     System.out.println("relocates: " + relocates);
                     System.out.println("no data: " + nodata);
                     System.out.println("cockups: " + cockups);
                     System.out.println("test: " + test);
-                    System.out.println("");
+                    System.out.println("");*/
                 }
             }
         } finally {
@@ -299,6 +300,28 @@ public class WeightedFuzzy {
         }
 
         return raster;
+    }
+
+    
+    /**
+     * Return the distance between the centroid and furthest node in a polygon
+     * @param geom
+     * @return 
+     */
+    public double getBoundingRadius(Polygon geom) {
+
+        //get geometric centroid
+        Point centroid = geom.getCentroid();
+
+        //get the distance to the furthest node from the centroid
+        double maxDistance = 0;
+        for (Coordinate node  : geom.getCoordinates()) {
+            double d = Math.sqrt(Math.pow(centroid.getX() - node.x, 2) + Math.pow(centroid.getY() - node.y, 2));
+            if (d > maxDistance){
+                maxDistance = d;
+            }
+        }
+        return maxDistance;
     }
 
     /**
