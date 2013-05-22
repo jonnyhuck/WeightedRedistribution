@@ -95,7 +95,7 @@ public class WeightedFuzzy {
 
                 //get the max offset distance
                 Geometry polygon = (Geometry) polygonFeature.getDefaultGeometry();
-                double maxOffsetDistance = this.getBoundingRadius((Polygon) polygon); //Math.sqrt(polygon.getArea() / Math.PI);
+                double maxOffsetDistance = this.getBoundingRadius(polygon); //Math.sqrt(polygon.getArea() / Math.PI);
 
                 //get all points within it
                 SimpleFeatureCollection pointsWithin = this.getPointsWithin(polygonFeature, points);
@@ -308,7 +308,7 @@ public class WeightedFuzzy {
      * @param geom
      * @return 
      */
-    public double getBoundingRadius(Polygon geom) {
+    public double getBoundingRadius(Geometry geom) {
 
         //get geometric centroid
         Point centroid = geom.getCentroid();
