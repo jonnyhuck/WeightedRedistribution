@@ -67,17 +67,6 @@ public class WeightedFuzzy {
         final int mWidth = (int) weightingSurface.getEnvelope2D().getSpan(0);
         final int pxSize = mWidth / pxWidth;
 
-        //build the 2D matrix to represent each 'splat', then 'flatten' to 1D array
-        /*double[][] splat2D = this.getFuzzyMatrix(splatRadius, pxSize);
-        final int nCells = (int) Math.pow(splat2D[0].length, 2);
-        double[] splat1D = new double[nCells];
-        int j, k;
-        for (int i = 0; i < nCells; i++) {
-        j = (int) i / splat2D[0].length;
-        k = i % splat2D[0].length;
-        splat1D[i] = splat2D[j][k];
-        }*/
-
         //loop through the polygons
         SimpleFeatureIterator polygonIterator = polygons.getFeatures().features();
         try {
