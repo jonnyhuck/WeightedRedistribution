@@ -39,21 +39,18 @@ import org.opengis.referencing.operation.TransformException;
 public class WeightedFuzzy {
 
     /**
-     * Get a fuzzy redistribution surface from the input data
+     * 
      * @param points
      * @param polygons
      * @param weightingSurface
      * @param relocationIterations
-     * @param pcOffsetDistance
-     * @param splatRadius
-     * @param outputPath
+     * @param fuzziness
      * @return
+     * @throws IOException
      * @throws NoSuchAuthorityCodeException
      * @throws FactoryException
-     * @throws SchemaException
      * @throws InvalidGridGeometryException
-     * @throws TransformException
-     * @throws IOException 
+     * @throws TransformException 
      */
     public GridCoverage2D getFuzzyRelocatedSurface(SimpleFeatureSource points, SimpleFeatureSource polygons,
             GridCoverage2D weightingSurface, int relocationIterations, double fuzziness) throws IOException,
