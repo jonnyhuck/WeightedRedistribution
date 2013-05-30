@@ -56,7 +56,7 @@ public class WeightedFuzzy {
      * @throws IOException 
      */
     public GridCoverage2D getFuzzyRelocatedSurface(SimpleFeatureSource points, SimpleFeatureSource polygons,
-            GridCoverage2D weightingSurface, int relocationIterations, int splatRadius) throws IOException,
+            GridCoverage2D weightingSurface, int relocationIterations, double fuzziness) throws IOException,
             NoSuchAuthorityCodeException, FactoryException, InvalidGridGeometryException, TransformException {
 
         //get an output surface
@@ -68,15 +68,15 @@ public class WeightedFuzzy {
         final int pxSize = mWidth / pxWidth;
 
         //build the 2D matrix to represent each 'splat', then 'flatten' to 1D array
-        double[][] splat2D = this.getFuzzyMatrix(splatRadius, pxSize);
+        /*double[][] splat2D = this.getFuzzyMatrix(splatRadius, pxSize);
         final int nCells = (int) Math.pow(splat2D[0].length, 2);
         double[] splat1D = new double[nCells];
         int j, k;
         for (int i = 0; i < nCells; i++) {
-            j = (int) i / splat2D[0].length;
-            k = i % splat2D[0].length;
-            splat1D[i] = splat2D[j][k];
-        }
+        j = (int) i / splat2D[0].length;
+        k = i % splat2D[0].length;
+        splat1D[i] = splat2D[j][k];
+        }*/
 
         //loop through the polygons
         SimpleFeatureIterator polygonIterator = polygons.getFeatures().features();
@@ -91,9 +91,23 @@ public class WeightedFuzzy {
 
                 //get next polygon
                 SimpleFeature polygonFeature = polygonIterator.next();
+                Geometry polygon = (Geometry) polygonFeature.getDefaultGeometry();
+
+                //get the splat radius for this polygon
+                double splatRadius = Math.sqrt((polygon.getArea() * fuzziness) / Math.PI);
+
+                //build the 2D matrix to represent each 'splat', then 'flatten' to 1D array
+                double[][] splat2D = this.getFuzzyMatrix(splatRadius, pxSize);
+                int nCells = (int) Math.pow(splat2D[0].length, 2);
+                double[] splat1D = new double[nCells];
+                int j, k;
+                for (int i = 0; i < nCells; i++) {
+                    j = (int) i / splat2D[0].length;
+                    k = i % splat2D[0].length;
+                    splat1D[i] = splat2D[j][k];
+                }
 
                 //get the max offset distance
-                Geometry polygon = (Geometry) polygonFeature.getDefaultGeometry();
                 double maxOffsetDistance = this.getBoundingRadius(polygon); //Math.sqrt(polygon.getArea() / Math.PI);
 
                 //get all points within it
@@ -211,7 +225,7 @@ public class WeightedFuzzy {
      * @param pixelSize
      * @return a matrix of values 
      */
-    private double[][] getFuzzyMatrix(int radius, double pixelSize) {
+    private double[][] getFuzzyMatrix(double radius, double pixelSize) {
 
         //get the size of the radius in pixels
         final int radPx = (int) (radius / pixelSize);
@@ -301,7 +315,6 @@ public class WeightedFuzzy {
         return raster;
     }
 
-    
     /**
      * Return the distance between the centroid and furthest node in a polygon
      * @param geom
@@ -314,9 +327,9 @@ public class WeightedFuzzy {
 
         //get the distance to the furthest node from the centroid
         double maxDistance = 0;
-        for (Coordinate node  : geom.getCoordinates()) {
+        for (Coordinate node : geom.getCoordinates()) {
             double d = Math.sqrt(Math.pow(centroid.getX() - node.x, 2) + Math.pow(centroid.getY() - node.y, 2));
-            if (d > maxDistance){
+            if (d > maxDistance) {
                 maxDistance = d;
             }
         }

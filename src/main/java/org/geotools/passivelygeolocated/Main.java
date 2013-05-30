@@ -56,7 +56,7 @@ public class Main {
         //get the output surface
         WeightedFuzzy wf = new WeightedFuzzy();
         GridCoverage2D gcOut = wf.getFuzzyRelocatedSurface(pointSource, polygonSource,
-                weightingSurface, 10, 10000);
+                weightingSurface, 10, 0.01);
         
         //write the file
         FileHandler.writeGeoTiffFile(gcOut, "/Users/jonnyhuck/Documents/_level2.tif");
