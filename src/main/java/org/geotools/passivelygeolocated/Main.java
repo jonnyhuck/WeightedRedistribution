@@ -37,7 +37,8 @@ public class Main {
             //print help if there are no args
             System.out.println("java WFR n f [output path].tif");            
             System.out.println("e.g.:");            
-            System.out.println("     java WFR 10 0.1 /Users/wfr/filename.tif");            
+            System.out.println("     java WFR 10 0.1 /Users/wfr/filename.tif");
+            return;
         } else if (args.length != 3){
             System.out.println("you need 3 arguments!");
             System.out.println("please try again.");
@@ -92,7 +93,7 @@ public class Main {
         //write the file
         System.out.println("writing output...");
         //FileHandler.writeGeoTiffFile(gcOut, "/Users/jonnyhuck/Documents/_level3.tif");
-        FileHandler.writeGeoTiffFile(gcOut, args[3]);
+        FileHandler.writeGeoTiffFile(gcOut, args[2]);
         
         //create greyscale style
         StyleFactory sf = CommonFactoryFinder.getStyleFactory(null);
