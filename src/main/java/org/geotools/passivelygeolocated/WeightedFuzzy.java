@@ -4,6 +4,7 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
+import java.util.Random;
 import java.awt.image.DataBuffer;
 import java.awt.image.WritableRaster;
 import java.io.IOException;
@@ -177,6 +178,9 @@ public class WeightedFuzzy {
     private Point relocate(Point point, Geometry polygon, int iterations, double maxDistance, GridCoverage2D weightingSurface)
             throws NoSuchAuthorityCodeException, FactoryException {
 
+        //random number generator
+        Random rng = new Random();
+        
         //holds max value
         double maxVal = 0;
         Point out = point;
@@ -188,8 +192,8 @@ public class WeightedFuzzy {
             Point relocated;
             do {
                 //force the new point to be within the polygon
-                relocated = this.cartesianOffset(point, Math.rint(Math.random() * maxDistance),
-                        Math.rint(Math.random() * 359));
+                relocated = this.cartesianOffset(point, rng.nextDouble() * maxDistance,
+                        rng.nextDouble() * 359.9);
             } while (!relocated.within(polygon));
 
             //test the weighting surface value
