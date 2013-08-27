@@ -35,12 +35,12 @@ public class Main {
         //make sure there are 3 arguments
         if (args.length == 0){
             //print help if there are no args
-            System.out.println("java WFR n f [output path].tif");            
+            System.out.println("java -jar WFR.jar n f [weighting surface path].tif [output path].tif");            
             System.out.println("e.g.:");            
-            System.out.println("     java WFR 10 0.1 /Users/wfr/filename.tif");
+            System.out.println("     java -jar WFR.jar 10 0.1 /Users/wfr/weighting_surface.tif /Users/wfr/output_filename.tif");
             return;
-        } else if (args.length != 3){
-            System.out.println("you need 3 arguments!");
+        } else if (args.length != 4){
+            System.out.println("you need 4 arguments!");
             System.out.println("please try again.");
             return;
         }
@@ -77,12 +77,8 @@ public class Main {
         SimpleFeatureSource polygonSource = FileHandler.openShapefile(polygons);
 
         // display a data store file chooser dialog for geotiff files
-        System.out.println("select weighting surface...");
-        File tif = JFileDataStoreChooser.showOpenFile("tif", null);
-        if (tif == null) {
-            return;
-        }
-        GridCoverage2D weightingSurface = FileHandler.openGeoTiffFile(tif);
+        File file = new File(args[2]);
+        GridCoverage2D weightingSurface = FileHandler.openGeoTiffFile(file);
         
         //get the output surface
         System.out.println("calculating WFR surface...");
@@ -92,8 +88,7 @@ public class Main {
         
         //write the file
         System.out.println("writing output...");
-        //FileHandler.writeGeoTiffFile(gcOut, "/Users/jonnyhuck/Documents/_level3.tif");
-        FileHandler.writeGeoTiffFile(gcOut, args[2]);
+        FileHandler.writeGeoTiffFile(gcOut, args[3]);
         
         //create greyscale style
         StyleFactory sf = CommonFactoryFinder.getStyleFactory(null);

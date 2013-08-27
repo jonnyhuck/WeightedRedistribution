@@ -70,11 +70,6 @@ public class WeightedFuzzy {
             //populate the new feature collection with offset points
             while (polygonIterator.hasNext()) {
 
-                int cockups = 0;
-                int relocates = 0;
-                int nodata = 0;
-                int test = 0;
-
                 //get next polygon
                 SimpleFeature polygonFeature = polygonIterator.next();
                 Geometry polygon = (Geometry) polygonFeature.getDefaultGeometry();
@@ -105,8 +100,6 @@ public class WeightedFuzzy {
                     //populate the new feature collection with offset points
                     while (pointsIterator.hasNext()) {
 
-                        test++;
-
                         //retrieve the feature then geom (as a JTS point)
                         SimpleFeature pointFeature = pointsIterator.next();
                         Point point = (Point) pointFeature.getDefaultGeometry();
@@ -116,8 +109,10 @@ public class WeightedFuzzy {
 
                             //offset the point, then get the position of the top left of the patch
                             Point offsetPoint = this.relocate(point, polygon, relocationIterations, maxOffsetDistance, weightingSurface);
+                            
                             Point patchTopLeft = this.cartesianOffset(offsetPoint,
-                                    Math.sqrt(Math.pow(splat2D[0].length, 2) + Math.pow(splat2D[0].length, 2)), 315);
+                                    Math.sqrt(Math.pow((splat2D[0].length * pxSize), 2) + Math.pow((splat2D[0].length * pxSize), 2)), 
+                                    315);
 
                             //The coordinates at which the patch will be applied
                             CoordinateReferenceSystem crs = CRS.decode("EPSG:27700");
@@ -138,23 +133,13 @@ public class WeightedFuzzy {
                                 //add splat to raster at the desired location
                                 outputSurface.setPixels(topLeft.x, topLeft.y, splat2D[0].length, splat2D[0].length, patch);
 
-                                relocates++;
                             } catch (ArrayIndexOutOfBoundsException e) {
-                                cockups++;
                             }
-                        } else {
-                            nodata++;
                         }
                     }
                 } finally {
                     //close the iterator
                     pointsIterator.close();
-                    /*System.out.println("points: " + pointsWithin.size());
-                    System.out.println("relocates: " + relocates);
-                    System.out.println("no data: " + nodata);
-                    System.out.println("cockups: " + cockups);
-                    System.out.println("test: " + test);
-                    System.out.println("");*/
                 }
             }
         } finally {
@@ -216,8 +201,8 @@ public class WeightedFuzzy {
      */
     private double[][] getFuzzyMatrix(double radius, double pixelSize) {
 
-        //get the size of the radius in pixels
-        final int radPx = (int) (radius / pixelSize);
+        //get the size of the radius in pixels (can't be smaller than 1!)
+        final int radPx = (radius / pixelSize) < 1 ? 1 : (int) (radius / pixelSize);
 
         //get the required array size and build it
         final int span = (radPx * 2) + 1;
