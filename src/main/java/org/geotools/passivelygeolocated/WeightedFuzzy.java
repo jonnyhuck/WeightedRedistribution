@@ -109,10 +109,8 @@ public class WeightedFuzzy {
 
                             //offset the point, then get the position of the top left of the patch
                             Point offsetPoint = this.relocate(point, polygon, relocationIterations, maxOffsetDistance, weightingSurface);
-                            
-                            Point patchTopLeft = this.cartesianOffset(offsetPoint,
-                                    Math.sqrt(Math.pow((splat2D[0].length * pxSize), 2) + Math.pow((splat2D[0].length * pxSize), 2)), 
-                                    315);
+                            double pythag = Math.pow(splat2D[0].length * (pxSize / 2), 2);
+                            Point patchTopLeft = this.cartesianOffset(offsetPoint, Math.sqrt(pythag * 2), 315);
 
                             //The coordinates at which the patch will be applied
                             CoordinateReferenceSystem crs = CRS.decode("EPSG:27700");
