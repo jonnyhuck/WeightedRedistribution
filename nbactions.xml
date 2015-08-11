@@ -8,8 +8,33 @@
             </goals>
             <properties>
                 <exec.classpathScope>runtime</exec.classpathScope>
-                <exec.args>-classpath %classpath org.geotools.passivelygeolocated.Main</exec.args>
+                <exec.args>-classpath %classpath org.geotools.passivelygeolocated.Main 10 0.01 /Users/jonnyhuck/Documents/GBPop_density_500m_210813v2.tif /Users/jonnyhuck/Documents/newlevel1.tif</exec.args>
                 <exec.executable>java</exec.executable>
+            </properties>
+        </action>
+        <action>
+            <actionName>debug</actionName>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.2:exec</goal>
+            </goals>
+            <properties>
+                <exec.classpathScope>runtime</exec.classpathScope>
+                <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath org.geotools.passivelygeolocated.Main 10 0.01 /Users/jonnyhuck/Documents/GBPop_density_500m_210813v2.tif /Users/jonnyhuck/Documents/newlevel1.tif</exec.args>
+                <jpda.listen>true</jpda.listen>
+                <exec.executable>java</exec.executable>
+            </properties>
+        </action>
+        <action>
+            <actionName>profile</actionName>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.1.1:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>${profiler.args} -classpath %classpath org.geotools.passivelygeolocated.Main 10 0.01 /Users/jonnyhuck/Documents/GBPop_density_500m_210813v2.tif /Users/jonnyhuck/Documents/newlevel1.tif</exec.args>
+                <profiler.action>profile</profiler.action>
+                <exec.executable>${profiler.java}</exec.executable>
             </properties>
         </action>
     </actions>
